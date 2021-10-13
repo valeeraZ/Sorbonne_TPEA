@@ -15,16 +15,6 @@ import javax.xml.bind.DatatypeConverter;
  */
 public class ED25519 {
 
-    final KeyPairGenerator gen;
-
-    public ED25519() throws NoSuchAlgorithmException, NoSuchProviderException {
-        Security.addProvider(new EdDSASecurityProvider());
-        SecureRandom sr = SecureRandom.getInstance("SHA1PRNG");
-        gen = KeyPairGenerator.getInstance("EdDSA", "EdDSA");
-        sr.setSeed(System.currentTimeMillis());
-        gen.initialize(256,sr);
-    }
-
     /**
      * return a signature in byte[]
      * @param k the KeyPair of java.security

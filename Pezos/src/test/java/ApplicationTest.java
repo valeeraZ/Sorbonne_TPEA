@@ -16,7 +16,7 @@ public class ApplicationTest {
 
     @Test
     public void generateKeyPairTest() throws NoSuchAlgorithmException, SignatureException, InvalidKeyException {
-        KeyPair keyPair = ED25519.generateKeyPairFromString(Constants.PUBLIC_KEY, Constants.PRIVATE_KEY);
+        KeyPair keyPair = ED25519.prepareKeyPair();
         byte[] seed = DatatypeConverter.parseHexBinary("B12792B9DFE0E5610649827AEAFC241FE467854B5E5BA1DE");
         byte[] signature = ED25519.sign(keyPair, seed);
         assert ED25519.verify(keyPair.getPublic(), seed, signature);
@@ -25,6 +25,6 @@ public class ApplicationTest {
     @Test
     public void connectionTest() throws IOException, NoSuchAlgorithmException, InvalidKeyException, SignatureException, InterruptedException {
         TCPClient client = new TCPClient(Constants.IP, Constants.PORT);
-        assert client.authentication();
+        assert client.authentication() != null;
     }
 }
