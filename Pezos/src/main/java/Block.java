@@ -1,9 +1,15 @@
 import lombok.Data;
+import net.i2p.crypto.eddsa.EdDSAPublicKey;
+import net.i2p.crypto.eddsa.spec.EdDSANamedCurveTable;
+import net.i2p.crypto.eddsa.spec.EdDSAParameterSpec;
+import net.i2p.crypto.eddsa.spec.EdDSAPublicKeySpec;
 import org.apache.commons.lang3.ArrayUtils;
+import org.kocakosm.jblake2.Blake2b;
 
 import javax.xml.bind.DatatypeConverter;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
 import java.security.SignatureException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -86,9 +92,31 @@ public class Block implements Information{
         //TODO
         return false;
     }
-
-    private boolean verifySignature(TCPClient client){
+    /**
+     * author Zhen HOU
+     * @param info the byte array of a block
+     * @return verification of the signature
+     */
+    private boolean verifySignature(TCPClient client,byte[] info){
         //TODO
+        try{
+            byte[] publicKeyDictateur = DatatypeConverter.parseHexBinary(Constants.PUBLIC_KEY); //obtenir par getKeyPublicState
+            EdDSAParameterSpec spec = EdDSANamedCurveTable.getByName(EdDSANamedCurveTable.ED_25519);
+            EdDSAPublicKeySpec publicKeySpec = new EdDSAPublicKeySpec(publicKeyDictateur, spec);
+            PublicKey pk_dic = new EdDSAPublicKey(publicKeySpec);
+
+            byte[] bloc_encode = ArrayUtils.subarray(info, 0, 108);
+            Blake2b b2 = new Blake2b(32);
+            b2.update(bloc_encode);
+            byte[] hash_bloc = b2.digest();
+
+            boolean res = ED25519.verify(pk_dic,hash_bloc,signature);
+            //byte[] signature_dic = ED25519.sign(keyPair, hash_seed);
+            return res;
+
+        }catch (Exception e){
+            e.printStackTrace();
+        }
         return false;
     }
 
