@@ -1,3 +1,4 @@
+import lombok.Data;
 import org.apache.commons.lang3.ArrayUtils;
 
 import javax.xml.bind.DatatypeConverter;
@@ -11,6 +12,7 @@ import java.util.List;
 /**
  * Created by Wenzhuo Zhao on 13/10/2021.
  */
+@Data
 public class Block implements Information{
     private final Level level;
     private final byte[] hashPredecessor;
@@ -114,6 +116,6 @@ public class Block implements Information{
                 "timestamp: " + new Timestamp(Utils.decodeLong(timestamp)).toString() + "\n" +
                 "hashOperations: " + DatatypeConverter.printHexBinary(hashOperations) + "\n" +
                 "hashState: " + DatatypeConverter.printHexBinary(hashState) + "\n" +
-                "signature: " + DatatypeConverter.printHexBinary(signature) + "\n" ;
+                "signature: " + DatatypeConverter.printHexBinary(signature);
     }
 }

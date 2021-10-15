@@ -8,13 +8,13 @@ import javax.xml.bind.DatatypeConverter;
 public enum Application {
     GET_CURRENT_HEAD((short) 1, "GET CURRENT HEAD"),
     CURRENT_HEAD((short) 2, "CURRENT HEAD"),
-    GET_BLOCK((short) 3, "GET BLOCK <level>"),
-    BLOCK((short) 4, "BLOCK <BLOCK>"),
-    GET_BLOCK_OPERATIONS((short) 5, "GET BLOCK OPERATIONS <level>"),
-    BLOCK_OPERATIONS((short) 6, "BLOCK OPERATIONS <nb bytes of OPERATIONS> <OPERATIONS>"),
-    GET_STATE((short) 7, "GET STATE <level>"),
-    BLOCK_STATE((short) 8, "BLOCK STATE <STATE>"),
-    INJECT_OPERATION((short) 9, "INJECT OPERATION <OPERATION>");
+    GET_BLOCK((short) 3, "GET BLOCK"),
+    BLOCK((short) 4, "BLOCK"),
+    GET_BLOCK_OPERATIONS((short) 5, "GET BLOCK OPERATIONS"),
+    BLOCK_OPERATIONS((short) 6, "BLOCK OPERATIONS"),
+    GET_STATE((short) 7, "GET STATE"),
+    BLOCK_STATE((short) 8, "BLOCK STATE"),
+    INJECT_OPERATION((short) 9, "INJECT OPERATION");
 
     private final short tag;
     private final String name;
@@ -42,8 +42,8 @@ public enum Application {
     }
 
     public static Application fromBytesToApplication(byte[] app){
-        short tag = Utils.decodeShort(ArrayUtils.subarray(app, 0, 2));
-        byte[] info = ArrayUtils.subarray(app, 2, app.length);
+        short tag = Utils.decodeShort(ArrayUtils.subarray(app, 0, Constants.TAG_SIZE));
+        byte[] info = ArrayUtils.subarray(app, Constants.TAG_SIZE, app.length);
         switch (tag){
             case 1:
                 return Application.GET_CURRENT_HEAD;
@@ -61,14 +61,14 @@ public enum Application {
                 return Application.GET_BLOCK_OPERATIONS.setInformation(level5);
             case 6:
                 short sizeOperations = Utils.decodeShort(ArrayUtils.subarray(info, 0, 2));
-                Operations operations = Operations.fromBytesToInformation(ArrayUtils.subarray(info, 2, 2+sizeOperations));
+                SignedOperations operations = SignedOperations.fromBytesToInformation(ArrayUtils.subarray(info, 2, 2+sizeOperations));
                 return Application.BLOCK_OPERATIONS.setInformation(operations);
             case 7:
                 //TODO
             case 8:
                 //TODO
             case 9:
-                //TODO
+
             default:
                 //TODO
                 return null;
@@ -83,6 +83,11 @@ public enum Application {
     public String toString() {
         if (information == null)
             return tag + " - " + name;
-        return tag + " - " + name + " content: \n" + information;
+
+        // no need to get a new line for just a number...
+        if (information.getClass() == Level.class)
+            return tag + " - " + name + " " + information;
+
+        return tag + " - " + name + ": \n" + information;
     }
 }

@@ -1,6 +1,9 @@
+import lombok.Data;
+
 /**
  * Created by Wenzhuo Zhao on 13/10/2021.
  */
+@Data
 public class Level implements Information{
     private final int level;
 

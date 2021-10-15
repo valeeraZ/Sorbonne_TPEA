@@ -40,8 +40,30 @@ public class TCPClient {
         }
     }
 
+    /**
+     * use OutputStream to send a Message Object, which is converted to byte[] before sending
+     * @param message the Message
+     */
     public void sendMessage(Message message) throws IOException {
         out.write(message.toBytesOfMsg());
+        log.info("Send Message: \n" + message);
+    }
+
+    public void sendMessage(Message message, String nameMessage) throws IOException {
+        out.write(message.toBytesOfMsg());
+        log.info("Send " + nameMessage + ": \n" + message);
+    }
+
+    /**
+     * use InputStream to read bytes and put in buffer
+     * @param buffer the buffer byte array to save bytes
+     * @return the buffer containing bytes
+     */
+    public byte[] receiveBytes(byte[] buffer) throws IOException {
+        int len = in.read(buffer);
+        if (len < 1)
+            throw new RuntimeException("Response not received, please check the connection");
+        return buffer;
     }
 
     /**
@@ -51,18 +73,14 @@ public class TCPClient {
     public Application authentication() throws IOException, NoSuchAlgorithmException, InvalidKeyException, SignatureException {
         // a random seed of 24b from server
         byte[] seed = new byte[24];
-        int len_seed = in.read(seed);
-        if (len_seed == 0){
-            log.warn("Please check the configuration of connection");
-            return null;
-        }
+        seed = receiveBytes(seed);
         log.info("Receive Seed: \n" + DatatypeConverter.printHexBinary(seed));
 
         // send authentication message
         byte[] publicKey = DatatypeConverter.parseHexBinary(Constants.PUBLIC_KEY);
         Message publicKeyMessage = new Message(publicKey);
-        sendMessage(publicKeyMessage);
-        log.info("Send Public Key: \n" + publicKeyMessage.toHexString());
+        sendMessage(publicKeyMessage, "Public Key");
+        //log.info("Send Public Key: \n" + publicKeyMessage);
 
         // hash the seed, and send the signature of the hash
         Blake2b b2 = new Blake2b(32);
@@ -70,21 +88,18 @@ public class TCPClient {
         byte[] hash_seed = b2.digest();
         byte[] signature = ED25519.sign(keyPair, hash_seed);
         Message signatureMessage = new Message(signature);
-        sendMessage(signatureMessage);
-        log.info("Send Signature: \n" + signatureMessage.toHexString());
+        sendMessage(signatureMessage, "Signature");
+        //log.info("Send Signature: \n" + signatureMessage);
 
         // send GET CURRENT HEAD message
         Message getHead = new Message(Application.GET_CURRENT_HEAD);
         sendMessage(getHead);
-        log.info("Send Message: \n" + Application.GET_CURRENT_HEAD + " - " + getHead.toHexString());
+        //log.info("Send Message: \n" + Application.GET_CURRENT_HEAD + " - " + getHead.toHexString());
 
         byte[] info = new byte[Constants.TAG_SIZE + Constants.BLOCK_SIZE];
-        int len = in.read(info);
-        Application block = null;
-        if (len > 0){
-            block = Application.fromBytesToApplication(info);
-            log.info("Receive Block information: \n" + block);
-        }
+        info = receiveBytes(info);
+        Application block = Application.fromBytesToApplication(info);
+        log.info("Receive Block information: \n" + block);
 
         return block;
     }

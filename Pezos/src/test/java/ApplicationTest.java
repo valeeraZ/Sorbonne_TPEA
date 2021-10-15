@@ -27,4 +27,20 @@ public class ApplicationTest {
         TCPClient client = new TCPClient(Constants.IP, Constants.PORT);
         assert client.authentication() != null;
     }
+
+    @Test
+    public void blockOperationsTest() throws SignatureException, NoSuchAlgorithmException, InvalidKeyException, IOException {
+        TCPClient client = new TCPClient(Constants.IP, Constants.PORT);
+        Application info = client.authentication();
+        assert info != null;
+        Block block = (Block) info.getInformation();
+        Level level = block.getLevel();
+        Message get_ops = new Message(Application.GET_BLOCK_OPERATIONS.setInformation(level));
+        client.sendMessage(get_ops);
+        byte[] ops = new byte[Constants.TAG_SIZE*2 + Constants.MAX_SIGNED_OPS_SIZE];
+        ops = client.receiveBytes(ops);
+        //log.info(DatatypeConverter.printHexBinary(ops));
+        Application block_ops = Application.fromBytesToApplication(ops);
+        log.info("Receive Block " + level + "'s operations: \n" + block_ops);
+    }
 }

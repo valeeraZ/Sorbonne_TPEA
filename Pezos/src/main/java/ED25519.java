@@ -45,6 +45,32 @@ public class ED25519 {
     }
 
     /**
+     * generate a Public Key from String
+     * @param publicKeyStr the hex String of public key
+     * @return a PublicKey
+     */
+    public static PublicKey generatePublicKeyFromString(String publicKeyStr){
+        byte[] publicKeyByte = DatatypeConverter.parseHexBinary(publicKeyStr);
+        EdDSAParameterSpec spec = EdDSANamedCurveTable.getByName(EdDSANamedCurveTable.ED_25519);
+
+        EdDSAPublicKeySpec publicKeySpec = new EdDSAPublicKeySpec(publicKeyByte, spec);
+        return new EdDSAPublicKey(publicKeySpec);
+    }
+
+    /**
+     * generate a Public Key from String
+     * @param privateKeyStr the hex String of public key
+     * @return a PublicKey
+     */
+    public static PrivateKey generatePrivateKeyFromString(String privateKeyStr){
+        byte[] privateKeyByte = DatatypeConverter.parseHexBinary(privateKeyStr);
+        EdDSAParameterSpec spec = EdDSANamedCurveTable.getByName(EdDSANamedCurveTable.ED_25519);
+
+        EdDSAPrivateKeySpec privateKeySpec = new EdDSAPrivateKeySpec(privateKeyByte, spec);
+        return new EdDSAPrivateKey(privateKeySpec);
+    }
+
+    /**
      * generate a KeyPair from String of public key and private key
      * @param publicKeyStr String of public key
      * @param privateKeyStr String of private key
@@ -76,7 +102,7 @@ public class ED25519 {
     }
 
     public static KeyPair prepareKeyPair() throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
-        KeyPair keyPair = ED25519.generateKeyPairFromString(Constants.PUBLIC_KEY, Constants.PRIVATE_KEY);
+        KeyPair keyPair = new KeyPair(generatePublicKeyFromString(Constants.PUBLIC_KEY), generatePrivateKeyFromString(Constants.PRIVATE_KEY));
         byte[] seed = DatatypeConverter.parseHexBinary("B12792B9DFE0E5610649827AEAFC241FE467854B5E5BA1DE");
         byte[] signature = sign(keyPair, seed);
         assert verify(keyPair.getPublic(), seed, signature);

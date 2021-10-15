@@ -6,9 +6,11 @@ import javax.xml.bind.DatatypeConverter;
 /**
  * Created by Wenzhuo Zhao on 12/10/2021.
  */
+@Data
 public class Message {
     private final byte[] length_msg;
     private final byte[] msg;
+    private Application application;
 
     public Message(byte[] msg){
         this.length_msg = Utils.encodeShort((short) msg.length);
@@ -16,6 +18,7 @@ public class Message {
     }
 
     public Message(Application app){
+        this.application = app;
         this.msg = app.toBytesOfMsg();
         this.length_msg = Utils.encodeShort((short) msg.length);
     }
@@ -26,5 +29,12 @@ public class Message {
 
     public String toHexString(){
         return DatatypeConverter.printHexBinary(toBytesOfMsg());
+    }
+
+    @Override
+    public String toString(){
+        if (application != null)
+            return application.toString();
+        return DatatypeConverter.printHexBinary(msg);
     }
 }
