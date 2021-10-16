@@ -1,4 +1,8 @@
+import org.apache.commons.lang3.ArrayUtils;
+
 import java.nio.ByteBuffer;
+import java.util.Arrays;
+import java.util.stream.Stream;
 
 /**
  * Created by Wenzhuo Zhao on 11/10/2021.
@@ -53,7 +57,14 @@ public class Utils {
         return ByteBuffer.wrap(b).getLong();
     }
 
+    public static byte[] mergeArrays(byte[] ...arrays){
+        Stream<Byte> stream = Stream.of();
+        for (byte[] s: arrays) {
+            stream = Stream.concat(stream, Arrays.stream(ArrayUtils.toObject(s)));
+        }
 
+        return ArrayUtils.toPrimitive(stream.toArray(Byte[]::new));
+    }
 
     /**
      * String Hex to byte array

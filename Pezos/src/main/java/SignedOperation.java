@@ -3,17 +3,11 @@ import lombok.extern.slf4j.Slf4j;
 import net.i2p.crypto.eddsa.EdDSAPublicKey;
 import net.i2p.crypto.eddsa.spec.EdDSANamedCurveTable;
 import net.i2p.crypto.eddsa.spec.EdDSAParameterSpec;
-import net.i2p.crypto.eddsa.spec.EdDSAPrivateKeySpec;
 import net.i2p.crypto.eddsa.spec.EdDSAPublicKeySpec;
 import org.apache.commons.lang3.ArrayUtils;
 import org.kocakosm.jblake2.Blake2b;
 
-import javax.xml.bind.DatatypeConverter;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.PublicKey;
-import java.security.SignatureException;
-import java.util.Arrays;
+import java.security.*;
 
 /**
  * Created by Wenzhuo Zhao on 13/10/2021.
@@ -31,12 +25,31 @@ public class SignedOperation implements Information{
         this.signature = signature;
     }
 
+    /**
+     * sign an operation to be injected using our key
+     * @param contents an operation to be injected
+     */
+    public SignedOperation(Operation contents){
+        this.contents = contents;
+        this.publicKey = Constants.PUBLIC_KEY_BYTES;
+
+        byte[] concatBytes = ArrayUtils.addAll(contents.toBytesFromOperation(), publicKey);
+        Blake2b b2 = new Blake2b(32);
+        b2.update(concatBytes);
+        byte[] hash = b2.digest();
+
+        KeyPair keyPair = ED25519.prepareKeyPair();
+        try {
+            this.signature = ED25519.sign(keyPair, hash);
+        } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException e) {
+            throw new RuntimeException(e.getMessage());
+        }
+
+    }
+
     @Override
     public byte[] toBytesFromInformation() {
-        byte[] res;
-        res = ArrayUtils.addAll(contents.toBytesOfMsg(), publicKey);
-        res = ArrayUtils.addAll(res, signature);
-        return res;
+        return Utils.mergeArrays(contents.toBytesFromOperation(), publicKey, signature);
     }
 
     public static SignedOperation fromBytesToInformation(byte[] info)  {
