@@ -98,4 +98,33 @@ public class ApplicationTest {
         block_709.verifyHashOperations(client);
 
     }
+
+
+    @Test
+    public void BLOCK_STATE_Test() throws SignatureException, NoSuchAlgorithmException, InvalidKeyException, IOException {
+        Level level = block.getLevel();
+        Message get_state = new Message(Application.GET_STATE.setInformation(level));
+        client.sendMessage(get_state);
+        byte[] state = new byte[Constants.STATE_SIZE];
+        state = client.receiveBytes(state);
+        Application block_ops = Application.fromBytesToApplication(state);
+        log.info("Receive state " + level + "'s operations: \n" + block_ops);
+    }
+
+    @Test
+    public void StateVerification() throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, IOException{
+        Level level_711 = new Level(711);
+        Message get_block_711 = new Message(Application.GET_BLOCK.setInformation(level_711));
+        client.sendMessage(get_block_711);
+        byte[] info_711 = new byte[Constants.TAG_SIZE + Constants.BLOCK_SIZE];
+        info_711 = client.receiveBytes(info_711);
+        Application blockInfo_711 = Application.fromBytesToApplication(info_711);
+        log.info("Receive Block information: \n" + blockInfo_711);
+        assert blockInfo_711 != null;
+        Block block_711 = (Block) blockInfo_711.getInformation();
+
+        //boolean b = block.verifyHashState(client);
+        boolean b = block_711.verifyHashState(client);
+        log.info("verification_state:" + b);
+    }
 }

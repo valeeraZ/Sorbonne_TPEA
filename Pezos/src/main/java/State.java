@@ -4,6 +4,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+
+/**
+ * @author Zhaojie LU
+ */
 public class State implements Information{
     private final byte[]  dictator_public_key;
     private final byte[] timestamp;

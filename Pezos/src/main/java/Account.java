@@ -2,6 +2,9 @@ import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.Arrays;
 
+/**
+ * @author Zhaojie LU
+ */
 public class Account implements Information{
 //            user public key | 32 bytes | bytes |
 //            +---------------------+----------+----------------+
