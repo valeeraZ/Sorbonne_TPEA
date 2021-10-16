@@ -101,12 +101,8 @@ public class ED25519 {
         return new KeyPair(publicKey, privateKey);
     }
 
-    public static KeyPair prepareKeyPair() throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
-        KeyPair keyPair = new KeyPair(generatePublicKeyFromString(Constants.PUBLIC_KEY), generatePrivateKeyFromString(Constants.PRIVATE_KEY));
-        byte[] seed = DatatypeConverter.parseHexBinary("B12792B9DFE0E5610649827AEAFC241FE467854B5E5BA1DE");
-        byte[] signature = sign(keyPair, seed);
-        assert verify(keyPair.getPublic(), seed, signature);
-        return keyPair;
+    public static KeyPair prepareKeyPair()  {
+        return new KeyPair(generatePublicKeyFromString(Constants.PUBLIC_KEY), generatePrivateKeyFromString(Constants.PRIVATE_KEY));
     }
 
 }

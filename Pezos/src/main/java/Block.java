@@ -1,4 +1,5 @@
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import net.i2p.crypto.eddsa.EdDSAPublicKey;
 import net.i2p.crypto.eddsa.spec.EdDSANamedCurveTable;
 import net.i2p.crypto.eddsa.spec.EdDSAParameterSpec;
@@ -7,18 +8,21 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.kocakosm.jblake2.Blake2b;
 
 import javax.xml.bind.DatatypeConverter;
+import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.SignatureException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
  * Created by Wenzhuo Zhao on 13/10/2021.
  */
 @Data
+@Slf4j
 public class Block implements Information{
     private final Level level;
     private final byte[] hashPredecessor;
@@ -58,14 +62,15 @@ public class Block implements Information{
      * @return a byte array
      */
     public byte[] toBytesFromInformation(){
-        byte[] res;
-        res = ArrayUtils.addAll(level.toBytesFromInformation(), hashPredecessor);
-        res = ArrayUtils.addAll(res, timestamp);
-        res = ArrayUtils.addAll(res, hashOperations);
-        res = ArrayUtils.addAll(res, hashState);
-        res = ArrayUtils.addAll(res, signature);
-        return res;
+        return Utils.mergeArrays(level.toBytesFromInformation(),
+                hashPredecessor,
+                timestamp,
+                hashOperations,
+                hashState,
+                signature);
     }
+
+
 
     private boolean verifyHashPredecessor(TCPClient client){
         //TODO
@@ -83,9 +88,46 @@ public class Block implements Information{
      * @param client TCPClient to get more information of previous block
      * @return true if this operation is incorrect
      */
-    private boolean verifyHashOperations(TCPClient client){
-        //TODO
-        return false;
+    public boolean verifyHashOperations(TCPClient client) throws IOException {
+        Level level = getLevel();
+        Message get_ops = new Message(Application.GET_BLOCK_OPERATIONS.setInformation(level));
+        client.sendMessage(get_ops);
+        byte[] ops = new byte[Constants.TAG_SIZE*2 + Constants.MAX_SIGNED_OPS_SIZE];
+        ops = client.receiveBytes(ops);
+        Application block_ops = Application.fromBytesToApplication(ops);
+        log.info("Receive Block " + level + "'s operations: \n" + block_ops);
+        assert block_ops != null;
+        SignedOperations operations = (SignedOperations) block_ops.getInformation();
+        List<SignedOperation> listOperations = operations.getSignedOperations();
+
+        byte[] correction = opsHash(listOperations);
+        // delete the comments for testing
+        //log.info("Block " + level + "'s correct hashOperations is " + DatatypeConverter.printHexBinary(correction));
+        return Arrays.equals(hashOperations, correction);
+    }
+
+    /**
+     * calculation of hash list of operations
+     * @param listOperations operations
+     * @return hash list of operations
+     */
+    private byte[] opsHash(List<SignedOperation> listOperations){
+        Blake2b b2 = new Blake2b(32);
+        if (listOperations.isEmpty())
+            return new byte[Constants.HASH_SIZE];
+        if (listOperations.size() == 1){
+            b2.update(listOperations.get(0).toBytesFromInformation());
+            return b2.digest();
+        }
+        SignedOperation lastOp = listOperations.remove(listOperations.size() - 1);
+        b2.update(opsHash(listOperations));
+
+        Blake2b b2_1 = new Blake2b(32);
+        b2_1.update(lastOp.toBytesFromInformation());
+        byte[] hash_last_op = b2_1.digest();
+
+        b2.update(hash_last_op);
+        return b2.digest();
     }
 
     private boolean verifyHashState(TCPClient client){
@@ -93,19 +135,18 @@ public class Block implements Information{
         return false;
     }
     /**
-     * author Zhen HOU
-     * @param info the byte array of a block
+     * @author Zhen HOU
      * @return verification of the signature
      */
-    private boolean verifySignature(TCPClient client,byte[] info){
-        //TODO
+    private boolean verifySignature(TCPClient client){
         try{
             byte[] publicKeyDictateur = DatatypeConverter.parseHexBinary(Constants.PUBLIC_KEY); //obtenir par getKeyPublicState
             EdDSAParameterSpec spec = EdDSANamedCurveTable.getByName(EdDSANamedCurveTable.ED_25519);
             EdDSAPublicKeySpec publicKeySpec = new EdDSAPublicKeySpec(publicKeyDictateur, spec);
             PublicKey pk_dic = new EdDSAPublicKey(publicKeySpec);
 
-            byte[] bloc_encode = ArrayUtils.subarray(info, 0, 108);
+            //byte[] bloc_encode = ArrayUtils.subarray(info, 0, 108);
+            byte[] bloc_encode = Utils.mergeArrays(level.toBytesFromInformation(), hashPredecessor, timestamp, hashOperations, hashState);
             Blake2b b2 = new Blake2b(32);
             b2.update(bloc_encode);
             byte[] hash_bloc = b2.digest();

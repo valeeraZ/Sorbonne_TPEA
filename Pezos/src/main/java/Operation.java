@@ -29,7 +29,7 @@ public enum Operation {
         return this;
     }
 
-    public byte[] toBytesOfMsg(){
+    public byte[] toBytesFromOperation(){
         // only BAD SIGNATURE doesn't need to declare explicitly the error
         if (error != null)
             return ArrayUtils.addAll(Utils.encodeShort(tag), error);
