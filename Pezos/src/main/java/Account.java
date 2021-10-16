@@ -25,6 +25,7 @@ public class Account implements Information{
     private final int context_hash_pez;
     private final int signature_pez;
 
+
     public Account(byte[] user_public_key, int level_pez, int timestamp_pez, int operations_hash_pez, int context_hash_pez, int signature_pez) {
         this.user_public_key = user_public_key;
         this.level_pez = level_pez;

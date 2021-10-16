@@ -14,6 +14,10 @@ public class State implements Information{
     private final int nbbytes;
     private final List<Account> accounts;
 
+    public byte[] getDictator_public_key() {
+        return dictator_public_key;
+    }
+
     public State(byte[] dictator_public_key, byte[] timestamp, int nbbytes, List<Account> accounts) {
         this.dictator_public_key = dictator_public_key;
         this.timestamp = timestamp;
