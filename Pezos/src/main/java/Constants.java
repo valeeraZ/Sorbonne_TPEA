@@ -28,4 +28,7 @@ public class Constants {
 
     // a sequence of all 5 signed operations has 594 bytes
     static final int MAX_SIGNED_OPS_SIZE = 594;
+
+    // nb btyes for State with 17 accounts   2+32+8+4+(52*17)
+    static final int STATE_SIZE = 930;
 }

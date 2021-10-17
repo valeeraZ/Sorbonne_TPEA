@@ -64,9 +64,11 @@ public enum Application {
                 SignedOperations operations = SignedOperations.fromBytesToInformation(ArrayUtils.subarray(info, 2, 2+sizeOperations));
                 return Application.BLOCK_OPERATIONS.setInformation(operations);
             case 7:
-                //TODO
+                Level level7 = Level.fromBytesToInformation(info);
+                return Application.GET_STATE.setInformation(level7);
             case 8:
-                //TODO
+                State state = State.fromBytesToInformation(info);
+                return Application.BLOCK_STATE.setInformation(state);
             case 9:
 
             default:

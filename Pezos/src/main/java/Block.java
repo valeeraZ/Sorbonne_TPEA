@@ -172,9 +172,25 @@ public class Block implements Information{
         return b2.digest();
     }
 
-    private boolean verifyHashState(TCPClient client){
-        //TODO
-        return false;
+    /**
+     * @author Zhaojie LU
+     * @return true if this Hashstate is incorrect
+     */
+    public boolean verifyHashState(TCPClient client) throws IOException{
+            Level level = this.getLevel();
+            Message get_state = new Message(Application.GET_STATE.setInformation(level));
+            client.sendMessage(get_state);
+            byte[] state = new byte[Constants.STATE_SIZE];
+            state = client.receiveBytes(state);
+            Application state_app = Application.fromBytesToApplication(state);
+            byte[] state_byte = state_app.getInformation().toBytesFromInformation();
+            Blake2b b2 = new Blake2b(32);
+            b2.update(state_byte);
+            byte[] hash_state = b2.digest();
+            byte[] correction = this.hashState;
+            log.info("hash_state" + Arrays.toString(hash_state) + "\n" );
+            log.info("hash_state_from_block" + Arrays.toString(correction) + "\n" );
+        return Arrays.equals(hash_state, correction);
     }
     /**
      * @author Zhen HOU
