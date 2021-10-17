@@ -14,6 +14,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.SignatureException;
 import java.sql.Timestamp;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -70,16 +72,56 @@ public class Block implements Information{
                 signature);
     }
 
+    /**
+     * @author Chengyu YANG
+     * verify the hash predecessor
+     * @param client TCPClient to get more information of previous block
+     * @return true if the hash of predecessor is correct
+     */
+    public boolean verifyHashPredecessor(TCPClient client) throws IOException {
+        Message get_block_pre = new Message(Application.GET_BLOCK.setInformation(new Level(level.getLevel()-1)));
+        client.sendMessage(get_block_pre);
+        byte[] info_pre = new byte[Constants.TAG_SIZE + Constants.BLOCK_SIZE];
+        info_pre = client.receiveBytes(info_pre);
+        Application blockInfo_pre = Application.fromBytesToApplication(info_pre);
+        log.info("Receive Block information: \n" + blockInfo_pre);
+        assert blockInfo_pre != null;
+        Block block_pre = (Block) blockInfo_pre.getInformation();
 
-
-    private boolean verifyHashPredecessor(TCPClient client){
-        //TODO
-        return false;
+        Blake2b b2 = new Blake2b(32);
+        b2.update(block_pre.toBytesFromInformation());
+        byte[] hash_pre = b2.digest();
+        System.out.println("hash pre in this: "+DatatypeConverter.printHexBinary(hashPredecessor));
+        System.out.println("hash predecessor: "+DatatypeConverter.printHexBinary(hash_pre));
+        return Arrays.equals(hashPredecessor,hash_pre);
     }
 
-    private boolean verifyTimestamp(TCPClient client){
-        //TODO
-        return false;
+    /**
+     * @author Chengyu YANG
+     * verify the timestamp
+     * @param client TCPClient to get more information of previous block
+     * @return true if this timestamp is correct
+     */
+    public boolean verifyTimestamp(TCPClient client) throws IOException, ParseException {
+        Message get_block_pre = new Message(Application.GET_BLOCK.setInformation(new Level(level.getLevel()-1)));
+        client.sendMessage(get_block_pre);
+        byte[] info_pre = new byte[Constants.TAG_SIZE + Constants.BLOCK_SIZE];
+        info_pre = client.receiveBytes(info_pre);
+        Application blockInfo_pre = Application.fromBytesToApplication(info_pre);
+        log.info("Receive Block information: \n" + blockInfo_pre);
+        assert blockInfo_pre != null;
+        Block block_pre = (Block) blockInfo_pre.getInformation();
+        Timestamp time_pred = new Timestamp(Utils.decodeLong(block_pre.getTimestamp())*1000);
+        Timestamp time_now = new Timestamp(Utils.decodeLong(timestamp)*1000);
+        //System.out.println(Arrays.toString(block_pre.getTimestamp()));
+        //System.out.println(Arrays.toString(timestamp));
+        SimpleDateFormat sdf =new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+        long timePre= sdf.parse(time_pred.toString()).getTime();
+        long timeNow = sdf.parse(time_now.toString()).getTime();
+        //System.out.println(time_pred);
+        //System.out.println(time_now);
+        //System.out.println(timeNow-timePre);
+        return (timeNow-timePre)/1000/60 >= 10;
     }
 
     /**
@@ -166,7 +208,7 @@ public class Block implements Information{
      * @param client TCPClient if needed to get more information of previous block
      * @return a List of SignedOperation containing the signed operations
      */
-    public List<SignedOperation> verifyOperations(TCPClient client) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+    public List<SignedOperation> verifyOperations(TCPClient client) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, IOException, ParseException {
         List<SignedOperation> errors = new ArrayList<>();
         if (verifyTimestamp(client)){
             Operation op = Operation.BAD_TIMESTAMP.setError(timestamp);// only BAD SIGNATURE doesn't need to set error
@@ -182,7 +224,7 @@ public class Block implements Information{
     public String toString() {
         return  "level: " + level + "\n" +
                 "hashPredecessor: " + DatatypeConverter.printHexBinary(hashPredecessor) + "\n" +
-                "timestamp: " + new Timestamp(Utils.decodeLong(timestamp)).toString() + "\n" +
+                "timestamp: " + new Timestamp(Utils.decodeLong(timestamp)*1000) + "\n" +
                 "hashOperations: " + DatatypeConverter.printHexBinary(hashOperations) + "\n" +
                 "hashState: " + DatatypeConverter.printHexBinary(hashState) + "\n" +
                 "signature: " + DatatypeConverter.printHexBinary(signature);

@@ -61,7 +61,7 @@ public enum Operation {
             return tag + " - " + name;
 
         if (tag == 2)
-            return tag + " - " + name + ": \n" + new Timestamp(Utils.decodeLong(error)).toString();
+            return tag + " - " + name + ": \n" + new Timestamp(Utils.decodeLong(error)*1000);
 
         return tag + " - " + name + ": \n" + DatatypeConverter.printHexBinary(error);
     }

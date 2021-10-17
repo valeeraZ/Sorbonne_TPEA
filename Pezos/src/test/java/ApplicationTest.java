@@ -8,6 +8,7 @@ import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
+import java.text.ParseException;
 
 import static org.junit.Assert.assertTrue;
 
@@ -73,6 +74,7 @@ public class ApplicationTest {
         log.info("Receive Block information: \n" + blockInfo_711);
         assert blockInfo_711 != null;
         Block block_711 = (Block) blockInfo_711.getInformation();
+        block_711.verifyHashOperations(client);
 
         Level level_710 = new Level(710);
         Message get_block_710 = new Message(Application.GET_BLOCK.setInformation(level_710));
@@ -85,7 +87,6 @@ public class ApplicationTest {
         Block block_710 = (Block) blockInfo_710.getInformation();
 
         assertTrue(block_710.verifyHashOperations(client));
-
         Level level_709 = new Level(709);
         Message get_block_709 = new Message(Application.GET_BLOCK.setInformation(level_709));
         client.sendMessage(get_block_709);
@@ -95,7 +96,66 @@ public class ApplicationTest {
         log.info("Receive Block information: \n" + blockInfo_709);
         assert blockInfo_709 != null;
         Block block_709 = (Block) blockInfo_709.getInformation();
-        block_709.verifyHashOperations(client);
-
     }
+
+    @Test
+    public void timeStampTest() throws IOException{
+        Level level_711 = new Level(849);
+        Message get_block_711 = new Message(Application.GET_BLOCK.setInformation(level_711));
+        client.sendMessage(get_block_711);
+        byte[] info_711 = new byte[Constants.TAG_SIZE + Constants.BLOCK_SIZE];
+        info_711 = client.receiveBytes(info_711);
+        Application blockInfo_711 = Application.fromBytesToApplication(info_711);
+        log.info("Receive Block information: \n" + blockInfo_711);
+        assert blockInfo_711 != null;
+        Block block_711 = (Block) blockInfo_711.getInformation();
+        block_711.verifyHashOperations(client);
+
+        Level level_710 = new Level(847);
+        Message get_block_710 = new Message(Application.GET_BLOCK.setInformation(level_710));
+        client.sendMessage(get_block_710);
+        byte[] info_710 = new byte[Constants.TAG_SIZE + Constants.BLOCK_SIZE];
+        info_710 = client.receiveBytes(info_710);
+        Application blockInfo_710 = Application.fromBytesToApplication(info_710);
+        log.info("Receive Block information: \n" + blockInfo_710);
+        assert blockInfo_710 != null;
+        Block block_710 = (Block) blockInfo_710.getInformation();
+
+        boolean b = false;
+        try {
+            b = block_711.verifyTimestamp(client);
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        log.info("TimeStampVerify:" + b);
+    }
+
+    @Test
+    public void predecessorTest() throws IOException{
+        Level level_711 = new Level(711);
+        Message get_block_711 = new Message(Application.GET_BLOCK.setInformation(level_711));
+        client.sendMessage(get_block_711);
+        byte[] info_711 = new byte[Constants.TAG_SIZE + Constants.BLOCK_SIZE];
+        info_711 = client.receiveBytes(info_711);
+        Application blockInfo_711 = Application.fromBytesToApplication(info_711);
+        log.info("Receive Block information: \n" + blockInfo_711);
+        assert blockInfo_711 != null;
+        Block block_711 = (Block) blockInfo_711.getInformation();
+        block_711.verifyHashOperations(client);
+
+        Level level_710 = new Level(710);
+        Message get_block_710 = new Message(Application.GET_BLOCK.setInformation(level_710));
+        client.sendMessage(get_block_710);
+        byte[] info_710 = new byte[Constants.TAG_SIZE + Constants.BLOCK_SIZE];
+        info_710 = client.receiveBytes(info_710);
+        Application blockInfo_710 = Application.fromBytesToApplication(info_710);
+        log.info("Receive Block information: \n" + blockInfo_710);
+        assert blockInfo_710 != null;
+        Block block_710 = (Block) blockInfo_710.getInformation();
+        boolean b;
+        b = block_711.verifyHashPredecessor(client);
+        log.info("PredecessorVerify:" + b);
+        //C18CD4CB966FD56A11D3BECDF533D94B944F38E91B889AEE3D091FE7A22BDC87
+    }
+
 }
