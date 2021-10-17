@@ -159,7 +159,7 @@ public class ApplicationTest {
         boolean b = block_711.verifyHashState(client);
         log.info("verification_state:" + b);
     }
-}
+
 
     @Test
     public void predecessorTest() throws IOException{
