@@ -1,11 +1,12 @@
 import org.apache.commons.lang3.ArrayUtils;
 
+import javax.xml.bind.DatatypeConverter;
 import java.util.Arrays;
 
 /**
  * @author Zhaojie LU
  */
-public class Account implements Information{
+public class Account implements Information {
 //            user public key | 32 bytes | bytes |
 //            +---------------------+----------+----------------+
 //            | level pez | 4 bytes | 32-bit integer |
@@ -46,7 +47,7 @@ public class Account implements Information{
         int operations_hash_pez = Utils.decodeInt(ArrayUtils.subarray(info, 40, 44));
         int context_hash_pez = Utils.decodeInt(ArrayUtils.subarray(info, 44, 48));
         int signature_pez = Utils.decodeInt(ArrayUtils.subarray(info, 48, 52));
-        return new Account(user_public_key,level_pez,timestamp_pez,operations_hash_pez,context_hash_pez,signature_pez);
+        return new Account(user_public_key, level_pez, timestamp_pez, operations_hash_pez, context_hash_pez, signature_pez);
     }
 
     @Override
@@ -61,15 +62,17 @@ public class Account implements Information{
         return res;
     }
 
+    public boolean getMyAccount(){
+        return Arrays.equals(this.user_public_key, Constants.PUBLIC_KEY_BYTES);
+    }
+
     @Override
     public String toString() {
-        return "Account{" +
-                "user_public_key=" + Arrays.toString(user_public_key) +
-                ", level_pez=" + level_pez +
-                ", timestamp_pez=" + timestamp_pez +
-                ", operations_hash_pez=" + operations_hash_pez +
-                ", context_hash_pez=" + context_hash_pez +
-                ", signature_pez=" + signature_pez +
-                "}\n";
+        return "user_public_key: " + DatatypeConverter.printHexBinary(user_public_key) + "\n" +
+                "level_pez: " + level_pez + "\n" +
+                "timestamp_pez: " + timestamp_pez + "\n" +
+                "operations_hash_pez: " + operations_hash_pez + "\n" +
+                "context_hash_pez: " + context_hash_pez + "\n" +
+                "signature_pez: " + signature_pez;
     }
 }

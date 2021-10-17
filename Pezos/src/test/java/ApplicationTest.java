@@ -9,8 +9,9 @@ import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
 import java.text.ParseException;
+import java.util.List;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * Created by Wenzhuo Zhao on 11/10/2021.
@@ -25,7 +26,7 @@ public class ApplicationTest {
         KeyPair keyPair = ED25519.prepareKeyPair();
         byte[] seed = DatatypeConverter.parseHexBinary("B12792B9DFE0E5610649827AEAFC241FE467854B5E5BA1DE");
         byte[] signature = ED25519.sign(keyPair, seed);
-        assert ED25519.verify(keyPair.getPublic(), seed, signature);
+        assertTrue(ED25519.verify(keyPair.getPublic(), seed, signature));
     }
 
     @Before
@@ -34,17 +35,18 @@ public class ApplicationTest {
         Application info = client.authentication();
         assert info != null;
         block = (Block) info.getInformation();
+        assertNotNull(block);
     }
 
     @Test
     public void convertBytesTest() throws SignatureException, NoSuchAlgorithmException, InvalidKeyException, IOException {
         byte[] encode = block.toBytesFromInformation();
         Block newBlock = Block.fromBytesToInformation(encode);
-        assert block.canEqual(newBlock);
+        assertTrue(block.canEqual(newBlock));
     }
 
     @Test
-    public void blockOperationsTest() throws SignatureException, NoSuchAlgorithmException, InvalidKeyException, IOException {
+    public void getBlockOperationsTest() throws SignatureException, NoSuchAlgorithmException, InvalidKeyException, IOException {
         Level level = block.getLevel();
         Message get_ops = new Message(Application.GET_BLOCK_OPERATIONS.setInformation(level));
         client.sendMessage(get_ops);
@@ -53,6 +55,7 @@ public class ApplicationTest {
         //log.info(DatatypeConverter.printHexBinary(ops));
         Application block_ops = Application.fromBytesToApplication(ops);
         log.info("Receive Block " + level + "'s operations: \n" + block_ops);
+        assertNotNull(block_ops);
     }
 
     @Test
@@ -64,129 +67,75 @@ public class ApplicationTest {
      * and we can see
      * the hash of operations we calculate for 709 should be equal to the 710's BAD OPERATIONS HASH's contenu
      */
-    public void hashOperationsTest() throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, IOException {
-        Level level_711 = new Level(711);
-        Message get_block_711 = new Message(Application.GET_BLOCK.setInformation(level_711));
-        client.sendMessage(get_block_711);
-        byte[] info_711 = new byte[Constants.TAG_SIZE + Constants.BLOCK_SIZE];
-        info_711 = client.receiveBytes(info_711);
-        Application blockInfo_711 = Application.fromBytesToApplication(info_711);
-        log.info("Receive Block information: \n" + blockInfo_711);
-        assert blockInfo_711 != null;
-        Block block_711 = (Block) blockInfo_711.getInformation();
+    public void verifyHashOperationsTest() throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, IOException {
+        Block block_711 = Block.getBlockByLevel(new Level(711), client);
         block_711.verifyHashOperations(client);
 
-        Level level_710 = new Level(710);
-        Message get_block_710 = new Message(Application.GET_BLOCK.setInformation(level_710));
-        client.sendMessage(get_block_710);
-        byte[] info_710 = new byte[Constants.TAG_SIZE + Constants.BLOCK_SIZE];
-        info_710 = client.receiveBytes(info_710);
-        Application blockInfo_710 = Application.fromBytesToApplication(info_710);
-        log.info("Receive Block information: \n" + blockInfo_710);
-        assert blockInfo_710 != null;
-        Block block_710 = (Block) blockInfo_710.getInformation();
-
+        Block block_710 = Block.getBlockByLevel(new Level(710), client);
         assertTrue(block_710.verifyHashOperations(client));
-        Level level_709 = new Level(709);
-        Message get_block_709 = new Message(Application.GET_BLOCK.setInformation(level_709));
-        client.sendMessage(get_block_709);
-        byte[] info_709 = new byte[Constants.TAG_SIZE + Constants.BLOCK_SIZE];
-        info_709 = client.receiveBytes(info_709);
-        Application blockInfo_709 = Application.fromBytesToApplication(info_709);
-        log.info("Receive Block information: \n" + blockInfo_709);
-        assert blockInfo_709 != null;
-        Block block_709 = (Block) blockInfo_709.getInformation();
+
+        Block block_709 = Block.getBlockByLevel(new Level(709), client);
+        assertFalse(block_709.verifyHashOperations(client));
     }
 
     @Test
-    public void timeStampTest() throws IOException{
-        Level level_711 = new Level(849);
-        Message get_block_711 = new Message(Application.GET_BLOCK.setInformation(level_711));
-        client.sendMessage(get_block_711);
-        byte[] info_711 = new byte[Constants.TAG_SIZE + Constants.BLOCK_SIZE];
-        info_711 = client.receiveBytes(info_711);
-        Application blockInfo_711 = Application.fromBytesToApplication(info_711);
-        log.info("Receive Block information: \n" + blockInfo_711);
-        assert blockInfo_711 != null;
-        Block block_711 = (Block) blockInfo_711.getInformation();
-        block_711.verifyHashOperations(client);
+    public void verifyTimeStampTest() throws IOException, ParseException {
+        Block block_849 = Block.getBlockByLevel(new Level(849), client);
+        assertTrue(block_849.verifyTimestamp(client));
 
-        Level level_710 = new Level(847);
-        Message get_block_710 = new Message(Application.GET_BLOCK.setInformation(level_710));
-        client.sendMessage(get_block_710);
-        byte[] info_710 = new byte[Constants.TAG_SIZE + Constants.BLOCK_SIZE];
-        info_710 = client.receiveBytes(info_710);
-        Application blockInfo_710 = Application.fromBytesToApplication(info_710);
-        log.info("Receive Block information: \n" + blockInfo_710);
-        assert blockInfo_710 != null;
-        Block block_710 = (Block) blockInfo_710.getInformation();
-
-        boolean b = false;
-        try {
-            b = block_711.verifyTimestamp(client);
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-        log.info("TimeStampVerify:" + b);
-    }
-
-
-
-    @Test
-    public void BLOCK_STATE_Test() throws SignatureException, NoSuchAlgorithmException, InvalidKeyException, IOException {
-        Level level = block.getLevel();
-        Message get_state = new Message(Application.GET_STATE.setInformation(level));
-        client.sendMessage(get_state);
-        byte[] state = new byte[Constants.STATE_SIZE];
-        state = client.receiveBytes(state);
-        Application block_ops = Application.fromBytesToApplication(state);
-        log.info("Receive state " + level + "'s operations: \n" + block_ops);
+        Block block_848 = Block.getBlockByLevel(new Level(848), client);
+        assertFalse(block_848.verifyTimestamp(client));
     }
 
     @Test
-    public void StateVerification() throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, IOException{
-        Level level_711 = new Level(711);
-        Message get_block_711 = new Message(Application.GET_BLOCK.setInformation(level_711));
-        client.sendMessage(get_block_711);
-        byte[] info_711 = new byte[Constants.TAG_SIZE + Constants.BLOCK_SIZE];
-        info_711 = client.receiveBytes(info_711);
-        Application blockInfo_711 = Application.fromBytesToApplication(info_711);
-        log.info("Receive Block information: \n" + blockInfo_711);
-        assert blockInfo_711 != null;
-        Block block_711 = (Block) blockInfo_711.getInformation();
+    public void getBlockStateTest() throws SignatureException, NoSuchAlgorithmException, InvalidKeyException, IOException {
+        assertNotNull(block.getState(client));
+    }
 
-        //boolean b = block.verifyHashState(client);
-        boolean b = block_711.verifyHashState(client);
-        log.info("verification_state:" + b);
+    @Test
+    public void verifyHashStateTest() throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, IOException{
+        Block block_711 = Block.getBlockByLevel(new Level(711), client);
+        assertTrue(block_711.verifyHashState(client));
     }
 
 
     @Test
-    public void predecessorTest() throws IOException{
-        Level level_711 = new Level(711);
-        Message get_block_711 = new Message(Application.GET_BLOCK.setInformation(level_711));
-        client.sendMessage(get_block_711);
-        byte[] info_711 = new byte[Constants.TAG_SIZE + Constants.BLOCK_SIZE];
-        info_711 = client.receiveBytes(info_711);
-        Application blockInfo_711 = Application.fromBytesToApplication(info_711);
-        log.info("Receive Block information: \n" + blockInfo_711);
-        assert blockInfo_711 != null;
-        Block block_711 = (Block) blockInfo_711.getInformation();
-        block_711.verifyHashOperations(client);
+    public void verifyHashPredecessorTest() throws IOException{
+        Block block_712 = Block.getBlockByLevel(new Level(712), client);
+        block_712.verifyHashOperations(client);
 
-        Level level_710 = new Level(710);
-        Message get_block_710 = new Message(Application.GET_BLOCK.setInformation(level_710));
-        client.sendMessage(get_block_710);
-        byte[] info_710 = new byte[Constants.TAG_SIZE + Constants.BLOCK_SIZE];
-        info_710 = client.receiveBytes(info_710);
-        Application blockInfo_710 = Application.fromBytesToApplication(info_710);
-        log.info("Receive Block information: \n" + blockInfo_710);
-        assert blockInfo_710 != null;
-        Block block_710 = (Block) blockInfo_710.getInformation();
-        boolean b;
-        b = block_711.verifyHashPredecessor(client);
-        log.info("PredecessorVerify:" + b);
+        Block block_711 = Block.getBlockByLevel(new Level(711), client);
+        assertFalse(block_711.verifyHashPredecessor(client));
+
+        Block block_710 = Block.getBlockByLevel(new Level(710), client);
+        assertTrue(block_710.verifyHashPredecessor(client));
         //C18CD4CB966FD56A11D3BECDF533D94B944F38E91B889AEE3D091FE7A22BDC87
+    }
+
+    @Test
+    public void verifySignatureTest() throws IOException {
+        Block block_711 = Block.getBlockByLevel(new Level(711), client);
+        assertTrue(block_711.verifySignature(client));
+
+        Block block_710 = Block.getBlockByLevel(new Level(710), client);
+        assertFalse(block_710.verifySignature(client));
+    }
+
+    @Test
+    public void verifyOperationsTest() throws IOException, ParseException, NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+        Block block_710 = Block.getBlockByLevel(new Level(710), client);
+        List<SignedOperation> corrections = block_710.verifyOperations(client);
+        log.info("Corrections Injected in Block 710: " + corrections);
+
+        Level level = new Level(711);
+        Message get_ops = new Message(Application.GET_BLOCK_OPERATIONS.setInformation(level));
+        client.sendMessage(get_ops);
+        byte[] ops = new byte[Constants.TAG_SIZE*2 + Constants.MAX_SIGNED_OPS_SIZE];
+        ops = client.receiveBytes(ops);
+        //log.info(DatatypeConverter.printHexBinary(ops));
+        Application block_ops = Application.fromBytesToApplication(ops);
+        log.info("Receive Block " + level + "'s operations: \n" + block_ops);
+
     }
 
 }

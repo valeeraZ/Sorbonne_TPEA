@@ -5,6 +5,7 @@ import javax.xml.bind.DatatypeConverter;
 import java.io.*;
 import java.net.Socket;
 import java.security.*;
+import java.text.ParseException;
 import java.util.List;
 
 /**
@@ -104,27 +105,51 @@ public class TCPClient {
         return block;
     }
 
-    public static void main(String[] args) throws IOException, NoSuchAlgorithmException, InvalidKeyException, SignatureException, InterruptedException{
+    public static void main(String[] args) throws IOException, NoSuchAlgorithmException, InvalidKeyException, SignatureException, InterruptedException, ParseException {
         TCPClient client = new TCPClient(Constants.IP, Constants.PORT);
         Block block;
         Application info = client.authentication();
         if (info != null){
-            log.info("Authentication success");
+            log.info("\n" + "\033[32;1m"+ "----------Authentication success----------" + "\033[m");
             block = (Block) info.getInformation();
         }else {
             log.warn("Authentication failure, please check your KeyPair");
             return;
         }
 
-        /*
-        List<SignedOperation> correction = block.verifyOperations(client);
-        for (SignedOperation op: correction) {
-            Application inject = Application.INJECT_OPERATION;
-            inject.setInformation(op);
-            Message injection = new Message(inject);
-            client.sendMessage(injection);
+        while (!client.socket.isClosed()){
+            List<SignedOperation> correction = block.verifyOperations(client);
+            for (SignedOperation op: correction) {
+                Application inject = Application.INJECT_OPERATION;
+                inject.setInformation(op);
+                Message injection = new Message(inject);
+                client.sendMessage(injection);
+            }
+
+            State state = block.getState(client);
+            for (Account account : state.getAccounts()){
+                if (account.getMyAccount()){
+                    StringBuilder sb = new StringBuilder();
+                    sb.append("\n" + "\033[31;1m"+ "----------Your Account Information----------" + "\n");
+                    sb.append(account);
+                    sb.append("\n");
+                    sb.append("--------------------------------------------" + "\033[m");
+                    log.info(sb.toString());
+                    break;
+                }
+            }
+            log.info("\n" + "\033[32;1m"+ "Waiting for next block..." + "\033[m");
+
+            byte[] blockInfo = new byte[Constants.TAG_SIZE + Constants.BLOCK_SIZE];
+            blockInfo = client.receiveBytes(blockInfo);
+            info = Application.fromBytesToApplication(blockInfo);
+            log.info("Receive Block information: \n" + info);
+            if (info == null){
+                log.warn("Get Block fail, please check the connection");
+                return;
+            }
+            block = (Block) info.getInformation();
         }
-        */
 
     }
 }

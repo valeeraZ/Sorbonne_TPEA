@@ -49,6 +49,17 @@ public class Utils {
     }
 
     /**
+     * encode 64its integer to bytes
+     * @param n the long (64bits integer) to convert
+     * @return the byte array
+     */
+    public static byte[] encodeLong(long n){
+        ByteBuffer b = ByteBuffer.allocate(8);
+        b.putLong(n);
+        return b.array();
+    }
+
+    /**
      * decode a 64 bits integer from byte array
      * @param b the byte array
      * @return the Long

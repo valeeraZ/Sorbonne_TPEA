@@ -1,5 +1,8 @@
+import lombok.Data;
 import org.apache.commons.lang3.ArrayUtils;
 
+import javax.xml.bind.DatatypeConverter;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -8,6 +11,7 @@ import java.util.List;
 /**
  * @author Zhaojie LU
  */
+@Data
 public class State implements Information{
     private final byte[]  dictator_public_key;
     private final byte[] timestamp;
@@ -62,11 +66,15 @@ public class State implements Information{
 
     @Override
     public String toString() {
-        return "State{" +
-                "dictator_public_key=" + Arrays.toString(dictator_public_key) +
-                ", timestamp=" + Arrays.toString(timestamp) +
-                ", nbbytes=" + nbbytes +
-                ", accounts=" + accounts +
-                '}';
+        StringBuilder sb = new StringBuilder();
+        sb.append("dictator_public_key: ").append(DatatypeConverter.printHexBinary(dictator_public_key)).append("\n");
+        sb.append("timestamp: ").append(new Timestamp(Utils.decodeLong(timestamp) * 1000)).append("\n");
+        sb.append("byte size of accounts: ").append(nbbytes).append("\n");
+        sb.append("accounts:").append("\n");
+        for (Account account : accounts){
+            sb.append(account.toString()).append("\n");
+            sb.append("----------------------------").append("\n");
+        }
+        return sb.toString();
     }
 }
