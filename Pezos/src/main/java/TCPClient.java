@@ -126,8 +126,10 @@ public class TCPClient {
                 client.sendMessage(injection);
             }
 
-            State state = block.getState(client);
-            for (Account account : state.getAccounts()){
+            if (block.getState() == null){
+                block.setState(block.getState(client));
+            }
+            for (Account account : block.getState().getAccounts()){
                 if (account.getMyAccount()){
                     StringBuilder sb = new StringBuilder();
                     sb.append("\n" + "\033[31;1m"+ "----------Your Account Information----------" + "\n");

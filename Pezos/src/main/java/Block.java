@@ -33,6 +33,8 @@ public class Block implements Information{
     private final byte[] hashState;
     private final byte[] signature;
     private List<SignedOperation> corrections;
+    private Block preBlock;
+    private State state;
 
     public Block(Level level, byte[] hashPredecessor, byte[] timestamp, byte[] hashOperations, byte[] hashState, byte[] signature) {
         this.level = level;
@@ -81,10 +83,12 @@ public class Block implements Information{
      * @author Chengyu YANG
      */
     public boolean verifyHashPredecessor(TCPClient client) throws IOException {
-        Block block_pre = getPreBlock(client);
+        if (preBlock == null){
+            preBlock = getPreBlock(client);
+        }
 
         Blake2b b2 = new Blake2b(32);
-        b2.update(block_pre.toBytesFromInformation());
+        b2.update(preBlock.toBytesFromInformation());
         byte[] hash_pre = b2.digest();
         // System.out.println("hash pre in this: " + DatatypeConverter.printHexBinary(hashPredecessor));
         // System.out.println("hash predecessor: " + DatatypeConverter.printHexBinary(hash_pre));
@@ -105,8 +109,10 @@ public class Block implements Information{
      * @author Chengyu YANG
      */
     public boolean verifyTimestamp(TCPClient client) throws IOException, ParseException {
-        Block block_pre = getPreBlock(client);
-        Timestamp time_pred = new Timestamp(Utils.decodeLong(block_pre.getTimestamp()) * 1000);
+        if (preBlock == null){
+            preBlock = getPreBlock(client);
+        }
+        Timestamp time_pred = new Timestamp(Utils.decodeLong(preBlock.getTimestamp()) * 1000);
         Timestamp time_now = new Timestamp(Utils.decodeLong(timestamp) * 1000);
         //System.out.println(Arrays.toString(block_pre.getTimestamp()));
         //System.out.println(Arrays.toString(timestamp));
@@ -118,7 +124,7 @@ public class Block implements Information{
         //System.out.println(timeNow-timePre);
         boolean res = (timeNow - timePre) / 1000 / 60 >= 10;
         if (!res){
-            long correctTimestamp = Utils.decodeLong(block_pre.getTimestamp()) + 60*10;
+            long correctTimestamp = Utils.decodeLong(preBlock.getTimestamp()) + 60*10;
             byte[] correctTimestampByte = Utils.encodeLong(correctTimestamp);
             Operation op = Operation.BAD_TIMESTAMP.setError(correctTimestampByte);
             SignedOperation sop = new SignedOperation(op);
@@ -210,7 +216,10 @@ public class Block implements Information{
      *
      */
     public boolean verifyHashState(TCPClient client) throws IOException {
-        State state = getState(client);
+        if (this.state == null){
+            state = getState(client);
+        }
+
         byte[] state_byte = state.toBytesFromInformation();
         Blake2b b2 = new Blake2b(32);
         b2.update(state_byte);
@@ -233,7 +242,9 @@ public class Block implements Information{
      * @author Zhen HOU
      */
     public boolean verifySignature(TCPClient client) throws IOException {
-        State state = getState(client);
+        if (this.state == null){
+            state = getState(client);
+        }
         byte[] publicKeyDictateur = state.getDictator_public_key();
         EdDSAParameterSpec spec = EdDSANamedCurveTable.getByName(EdDSANamedCurveTable.ED_25519);
         EdDSAPublicKeySpec publicKeySpec = new EdDSAPublicKeySpec(publicKeyDictateur, spec);
@@ -277,6 +288,8 @@ public class Block implements Information{
      * @return a List of SignedOperation containing the correct operations signed
      */
     public List<SignedOperation> verifyOperations(TCPClient client) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, IOException, ParseException {
+        this.preBlock = getPreBlock(client);
+        this.state = getState(client);
         verifyHashPredecessor(client);
         verifyTimestamp(client);
         verifyHashOperations(client);
