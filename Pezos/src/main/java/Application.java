@@ -70,10 +70,10 @@ public enum Application {
                 State state = State.fromBytesToInformation(info);
                 return Application.BLOCK_STATE.setInformation(state);
             case 9:
-
+                SignedOperation signedOperation = SignedOperation.fromBytesToInformation(info);
+                return Application.INJECT_OPERATION.setInformation(signedOperation);
             default:
-                //TODO
-                return null;
+                throw new RuntimeException("Bad Tag of Application Message");
         }
     }
 
