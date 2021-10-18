@@ -6,34 +6,18 @@ import java.sql.Timestamp;
 /**
  * Created by Wenzhuo Zhao on 13/10/2021.
  */
-public enum Operation {
-    BAD_PREDECESSOR((short)1, "BAD PREDECESSOR"),
-    BAD_TIMESTAMP((short)2, "BAD TIMESTAMP"),
-    BAD_OPERATIONS_HASH((short)3, "BAD OPERATIONS HASH"),
-    //literally, context means state of a block
-    BAD_CONTEXT_HASH((short)4, "BAD CONTEXT HASH"),
-    BAD_SIGNATURE((short)5, "BAD SIGNATURE");
-
-    private final short tag;
-    private final String name;
-    // error could be byte[] of hash predecessor, timestamp... 4 kinds
+public class Operation{
+    private OperationType type;
     private byte[] error;
 
-    Operation(short tag, String name) {
-        this.tag = tag;
-        this.name = name;
-    }
-
-    public Operation setError(byte[] error){
+    public Operation(OperationType type, byte[] error) {
+        this.type = type;
         this.error = error;
-        return this;
     }
 
-    public byte[] toBytesFromOperation(){
-        // only BAD SIGNATURE doesn't need to declare explicitly the error
-        if (error != null)
-            return ArrayUtils.addAll(Utils.encodeShort(tag), error);
-        return Utils.encodeShort(tag);
+    // Signature doesn't have error
+    public Operation(OperationType type) {
+        this.type = type;
     }
 
     public static Operation fromBytesToInformation(byte[] app){
@@ -41,29 +25,57 @@ public enum Operation {
         byte[] info = ArrayUtils.subarray(app, 2, app.length);
         switch (tag){
             case 1:
-                return Operation.BAD_PREDECESSOR.setError(info);
+                return new Operation(OperationType.BAD_PREDECESSOR, info);
             case 2:
-                return Operation.BAD_TIMESTAMP.setError(info);
+                return new Operation(OperationType.BAD_TIMESTAMP, info);
             case 3:
-                return Operation.BAD_OPERATIONS_HASH.setError(info);
+                return new Operation(OperationType.BAD_OPERATIONS_HASH, info);
             case 4:
-                return Operation.BAD_CONTEXT_HASH.setError(info);
+                return new Operation(OperationType.BAD_CONTEXT_HASH, info);
             case 5:
-                return Operation.BAD_SIGNATURE;
+                return new Operation(OperationType.BAD_SIGNATURE, info);
             default:
                 throw new RuntimeException("Bad Tag, cannot analyse this operation");
         }
     }
 
-    @Override
-    public String toString() {
+    public byte[] toBytesFromOperation(){
+        // only BAD SIGNATURE doesn't need to declare explicitly the error
+        if (error != null)
+            return ArrayUtils.addAll(type.toBytesFromOperation(), error);
+        return type.toBytesFromOperation();
+    }
+
+    public String toString(){
         if (error == null)
-            return tag + " - " + name;
+            return type.tag + " - " + type.name;
 
-        if (tag == 2)
-            return tag + " - " + name + ": \n" + new Timestamp(Utils.decodeLong(error)*1000);
+        if (type.tag == 2)
+            return type.tag + " - " + type.name + ": \n" + new Timestamp(Utils.decodeLong(error)*1000);
 
-        return tag + " - " + name + ": \n" + DatatypeConverter.printHexBinary(error);
+        return type.tag + " - " + type.name + ": \n" + DatatypeConverter.printHexBinary(error);
+    }
+}
+
+
+enum OperationType {
+    BAD_PREDECESSOR((short)1, "BAD PREDECESSOR"),
+    BAD_TIMESTAMP((short)2, "BAD TIMESTAMP"),
+    BAD_OPERATIONS_HASH((short)3, "BAD OPERATIONS HASH"),
+    //literally, context means state of a block
+    BAD_CONTEXT_HASH((short)4, "BAD CONTEXT HASH"),
+    BAD_SIGNATURE((short)5, "BAD SIGNATURE");
+
+    public final short tag;
+    public final String name;
+
+    OperationType(short tag, String name) {
+        this.tag = tag;
+        this.name = name;
+    }
+
+    public byte[] toBytesFromOperation(){
+        return Utils.encodeShort(tag);
     }
 
 }

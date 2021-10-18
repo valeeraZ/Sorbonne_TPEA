@@ -94,9 +94,9 @@ public class Block implements Information{
         // System.out.println("hash predecessor: " + DatatypeConverter.printHexBinary(hash_pre));
         boolean res = Arrays.equals(hashPredecessor, hash_pre);
         if (!res){
-            Operation op = Operation.BAD_PREDECESSOR.setError(hash_pre);
+            Operation op = new Operation(OperationType.BAD_PREDECESSOR, hash_pre);
             SignedOperation sop = new SignedOperation(op);
-            corrections.add(sop);
+            this.corrections.add(sop);
         }
         return res;
 
@@ -126,9 +126,9 @@ public class Block implements Information{
         if (!res){
             long correctTimestamp = Utils.decodeLong(preBlock.getTimestamp()) + 60*10;
             byte[] correctTimestampByte = Utils.encodeLong(correctTimestamp);
-            Operation op = Operation.BAD_TIMESTAMP.setError(correctTimestampByte);
+            Operation op = new Operation(OperationType.BAD_TIMESTAMP, correctTimestampByte);
             SignedOperation sop = new SignedOperation(op);
-            corrections.add(sop);
+            this.corrections.add(sop);
         }
         return res;
     }
@@ -169,15 +169,15 @@ public class Block implements Information{
         Application block_ops = Application.fromBytesToApplication(ops);
         log.info("Receive Block " + level + "'s operations: \n" + block_ops);
         assert block_ops != null;
-        SignedOperations operations = (SignedOperations) block_ops.getInformation();
-        List<SignedOperation> listOperations = operations.getSignedOperations();
+        SignedOperations soperations = (SignedOperations) block_ops.getInformation();
+        List<SignedOperation> listOperations = soperations.getSignedOperations();
 
         byte[] correction = opsHash(listOperations);
         // delete the comments for testing
         //log.info("Block " + level + "'s correct hashOperations is " + DatatypeConverter.printHexBinary(correction));
         boolean res = Arrays.equals(hashOperations, correction);
         if (!res){
-            Operation op = Operation.BAD_OPERATIONS_HASH.setError(correction);
+            Operation op = new Operation(OperationType.BAD_OPERATIONS_HASH, correction);
             SignedOperation sop = new SignedOperation(op);
             corrections.add(sop);
         }
@@ -228,7 +228,7 @@ public class Block implements Information{
         //log.info("hash_state_from_block" + DatatypeConverter.printHexBinary(this.hashState) + "\n");
         boolean res = Arrays.equals(hash_state, this.hashState);
         if (!res){
-            Operation op = Operation.BAD_CONTEXT_HASH.setError(hash_state);
+            Operation op = new Operation(OperationType.BAD_CONTEXT_HASH, hash_state);
             SignedOperation sop = new SignedOperation(op);
             corrections.add(sop);
         }
@@ -260,7 +260,7 @@ public class Block implements Information{
         try {
             boolean res = ED25519.verify(pk_dic, hash_bloc, signature);
             if (!res){
-                Operation op = Operation.BAD_SIGNATURE;
+                Operation op = new Operation(OperationType.BAD_SIGNATURE);
                 SignedOperation sop = new SignedOperation(op);
                 corrections.add(sop);
             }

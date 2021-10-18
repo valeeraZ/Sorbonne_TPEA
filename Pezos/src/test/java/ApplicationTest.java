@@ -1,6 +1,7 @@
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
+import org.kocakosm.jblake2.Blake2b;
 
 import javax.xml.bind.DatatypeConverter;
 import java.io.IOException;
@@ -110,6 +111,20 @@ public class ApplicationTest {
         Block block_710 = Block.getBlockByLevel(new Level(710), client);
         assertTrue(block_710.verifyHashPredecessor(client));
         //C18CD4CB966FD56A11D3BECDF533D94B944F38E91B889AEE3D091FE7A22BDC87
+    }
+
+    @Test
+    /**
+     * the block 962 has a bad hashPredecessor whose correction is given in 963
+     * but when we calculate hashPredecessor for 963, we shouldn't use the original data of 962
+     * instead, we should use the data of correction given in 963
+     */
+    public void verifyBadHashPredecessorTest() throws IOException, ParseException, NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+        Block block_963 = Block.getBlockByLevel(new Level(963), client);
+        List<SignedOperation> corrections = block_963.verifyOperations(client);
+
+        Block block_964 = Block.getBlockByLevel(new Level(964), client);
+        block_964.verifyOperations(client);
     }
 
     @Test
